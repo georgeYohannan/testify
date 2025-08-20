@@ -4,6 +4,8 @@ import '../providers/auth_provider.dart';
 import '../providers/verse_provider.dart';
 import '../providers/quiz_provider.dart';
 import '../utils/constants.dart';
+import '../widgets/elephant_mascot.dart';
+import '../widgets/theme_toggle.dart';
 import 'quiz_setup_screen.dart';
 import 'quiz_history_screen.dart';
 import 'settings_screen.dart';
@@ -30,10 +32,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(AppStrings.appName),
         actions: [
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -62,8 +64,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primary,
-                          AppColors.primary.withOpacity(0.8),
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.primary.withOpacity(0.8),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -71,7 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(AppSizes.radiusL),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -82,18 +84,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Row(
                           children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.pets,
-                                size: 35,
-                                color: Colors.white,
-                              ),
+                            ElephantMascot(
+                              state: ElephantState.happy,
+                              size: 60,
                             ),
                             const SizedBox(width: AppSizes.paddingM),
                             Expanded(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
+import '../widgets/theme_toggle.dart';
+import '../utils/constants.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -10,8 +13,6 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -43,14 +44,16 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           Card(
-            child: ListTile(
-              leading: const Icon(Icons.color_lens, color: Colors.purple),
-              title: const Text('Appearance'),
-              subtitle: const Text('Customize the app theme'),
-              onTap: () {
-                // TODO: Navigate to appearance settings
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Appearance settings coming soon!')),
+            child: Consumer<ThemeProvider>(
+              builder: (context, themeProvider, child) {
+                return ListTile(
+                  leading: Icon(
+                    themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: const Text('Theme'),
+                  subtitle: Text(themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode'),
+                  trailing: const ThemeToggle(showLabel: false),
                 );
               },
             ),

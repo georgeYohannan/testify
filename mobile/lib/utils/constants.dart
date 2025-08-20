@@ -1,49 +1,103 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF4A90E2); // Sky blue
-  static const Color secondary = Color(0xFFFF6B35); // Orange
-  static const Color accent = Color(0xFFF5A623); // Light orange
-  static const Color background = Color(0xFFF8FBFF); // Light blue background
-  static const Color surface = Colors.white;
-  static const Color textPrimary = Color(0xFF2C3E50);
-  static const Color textSecondary = Color(0xFF7F8C8D);
+  // Light Theme Colors
+  static const Color primaryLight = Color(0xFF4A90E2); // Sky blue
+  static const Color secondaryLight = Color(0xFFFF6B35); // Orange
+  static const Color accentLight = Color(0xFFF5A623); // Light orange
+  static const Color backgroundLight = Color(0xFFFAFAFA); // Light background
+  static const Color surfaceLight = Colors.white;
+  static const Color textPrimaryLight = Color(0xFF2C3E50);
+  static const Color textSecondaryLight = Color(0xFF7F8C8D);
+  
+  // Dark Theme Colors
+  static const Color primaryDark = Color(0xFF4A90E2); // Sky blue (same)
+  static const Color secondaryDark = Color(0xFFFF6B35); // Orange (same)
+  static const Color accentDark = Color(0xFFF5A623); // Light orange (same)
+  static const Color backgroundDark = Color(0xFF121212); // Dark background
+  static const Color surfaceDark = Color(0xFF1E1E1E); // Dark surface
+  static const Color textPrimaryDark = Color(0xFFFFFFFF); // White text
+  static const Color textSecondaryDark = Color(0xFFB0B0B0); // Light gray text
+  
+  // Status Colors (same for both themes)
   static const Color success = Color(0xFF27AE60);
   static const Color error = Color(0xFFE74C3C);
   static const Color warning = Color(0xFFF39C12);
+  
+  // Legacy colors for backwards compatibility
+  static const Color primary = primaryLight;
+  static const Color secondary = secondaryLight;
+  static const Color accent = accentLight;
+  static const Color background = backgroundLight;
+  static const Color surface = surfaceLight;
+  static const Color textPrimary = textPrimaryLight;
+  static const Color textSecondary = textSecondaryLight;
 }
 
 class AppTextStyles {
-  static const TextStyle heading1 = TextStyle(
+  // Light theme text styles
+  static const TextStyle heading1Light = TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
+    color: AppColors.textPrimaryLight,
   );
   
-  static const TextStyle heading2 = TextStyle(
+  static const TextStyle heading2Light = TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: AppColors.textPrimaryLight,
   );
   
-  static const TextStyle heading3 = TextStyle(
+  static const TextStyle heading3Light = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: AppColors.textPrimaryLight,
   );
   
-  static const TextStyle body1 = TextStyle(
+  static const TextStyle body1Light = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.normal,
-    color: AppColors.textPrimary,
+    color: AppColors.textPrimaryLight,
   );
   
-  static const TextStyle body2 = TextStyle(
+  static const TextStyle body2Light = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.normal,
-    color: AppColors.textSecondary,
+    color: AppColors.textSecondaryLight,
   );
   
+  // Dark theme text styles
+  static const TextStyle heading1Dark = TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimaryDark,
+  );
+  
+  static const TextStyle heading2Dark = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimaryDark,
+  );
+  
+  static const TextStyle heading3Dark = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimaryDark,
+  );
+  
+  static const TextStyle body1Dark = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textPrimaryDark,
+  );
+  
+  static const TextStyle body2Dark = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textSecondaryDark,
+  );
+  
+  // Common styles (theme-independent)
   static const TextStyle button = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
@@ -53,8 +107,14 @@ class AppTextStyles {
   static const TextStyle caption = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.normal,
-    color: AppColors.textSecondary,
   );
+  
+  // Legacy styles for backwards compatibility
+  static const TextStyle heading1 = heading1Light;
+  static const TextStyle heading2 = heading2Light;
+  static const TextStyle heading3 = heading3Light;
+  static const TextStyle body1 = body1Light;
+  static const TextStyle body2 = body2Light;
 }
 
 class AppSizes {
@@ -110,6 +170,15 @@ class AppStrings {
   static const String forgotPassword = 'Forgot Password?';
   static const String dontHaveAccount = "Don't have an account?";
   static const String alreadyHaveAccount = 'Already have an account?';
+  static const String darkMode = 'Dark Mode';
+  static const String lightMode = 'Light Mode';
+  
+  // Mascot messages
+  static const String mascotWelcome = 'Hi there! I\'m Ellie, your Bible quiz companion!';
+  static const String mascotCorrect = 'Great job! That\'s correct!';
+  static const String mascotIncorrect = 'Oops! Let\'s try again!';
+  static const String mascotEncouragement = 'You\'re doing amazing! Keep going!';
+  static const String mascotCelebration = 'Fantastic! You completed the quiz!';
   
   // Bible books (abbreviated list)
   static const List<String> bibleBooks = [
