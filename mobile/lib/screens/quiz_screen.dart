@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:word__way/models/quiz.dart';
-import 'package:word__way/widgets/elephant_mascot.dart';
-import 'package:word__way/screens/results_screen.dart';
+import 'package:testify/models/quiz.dart';
+import 'package:testify/widgets/elephant_mascot.dart';
+import 'package:testify/screens/results_screen.dart';
 
 class QuizScreen extends StatefulWidget {
   final List<Question> questions;
   final String book;
-  final Difficulty difficulty;
 
   const QuizScreen({
     super.key,
     required this.questions,
     required this.book,
-    required this.difficulty,
   });
 
   @override
@@ -132,7 +130,6 @@ class _QuizScreenState extends State<QuizScreen>
           questions: widget.questions,
           answers: _answers,
           book: widget.book,
-          difficulty: widget.difficulty,
         ),
       ),
     );
@@ -174,7 +171,7 @@ class _QuizScreenState extends State<QuizScreen>
     
     return PopScope(
       canPop: false,
-      onPopInvoked: (bool didPop) async {
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
         
         final shouldPop = await showDialog<bool>(
@@ -285,14 +282,7 @@ class _QuizScreenState extends State<QuizScreen>
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              currentQuestion.verseReference,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
+
                           ],
                         ),
                       ),

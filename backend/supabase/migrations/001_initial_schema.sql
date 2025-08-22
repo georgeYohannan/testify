@@ -37,17 +37,15 @@ CREATE TABLE IF NOT EXISTS public.quiz_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     book TEXT NOT NULL,
-    difficulty TEXT NOT NULL,
     score INTEGER NOT NULL,
-    total_questions INTEGER NOT NULL,
     answers JSONB NOT NULL,
-    completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_questions_book_difficulty ON public.questions(book, difficulty);
 CREATE INDEX IF NOT EXISTS idx_quiz_history_user_id ON public.quiz_history(user_id);
-CREATE INDEX IF NOT EXISTS idx_quiz_history_created_at ON public.quiz_history(completed_at);
+CREATE INDEX IF NOT EXISTS idx_quiz_history_created_at ON public.quiz_history(created_at);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;

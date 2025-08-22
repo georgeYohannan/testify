@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:word__way/theme.dart';
-import 'package:word__way/supabase/supabase_config.dart';
-import 'package:word__way/screens/splash_screen.dart';
-import 'package:word__way/screens/dashboard_screen.dart';
+import 'package:testify/theme.dart';
+import 'package:testify/supabase/supabase_config.dart';
+import 'package:testify/screens/splash_screen.dart';
+import 'package:testify/screens/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

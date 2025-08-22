@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:word__way/models/user.dart';
+import 'package:testify/models/user.dart';
 
 class SupabaseConfig {
   static late Supabase _instance;
@@ -7,8 +7,8 @@ class SupabaseConfig {
 
   static Future<void> initialize() async {
     _instance = await Supabase.initialize(
-      url: 'SUPABASE_URL',
-      anonKey: 'SUPABASE_ANON_KEY',
+      url: 'https://netiaalfuisuyohnlrke.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ldGlhYWxmdWlzdXlvaG5scmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzU0MDMsImV4cCI6MjA3MTIxMTQwM30.7-hzmN_Ah56FS_w13CCQ1X9aktssKxXs0tl4s-pKNC0',
     );
   }
 }

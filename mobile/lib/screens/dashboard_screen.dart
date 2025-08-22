@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:word__way/models/quiz.dart';
-import 'package:word__way/models/user.dart';
-import 'package:word__way/models/verse.dart';
-import 'package:word__way/services/quiz_service.dart';
-import 'package:word__way/supabase/supabase_config.dart';
-import 'package:word__way/widgets/elephant_mascot.dart';
-import 'package:word__way/widgets/verse_card.dart';
-import 'package:word__way/screens/quiz_setup_screen.dart';
-import 'package:word__way/screens/splash_screen.dart';
+import 'package:testify/models/quiz.dart';
+import 'package:testify/models/user.dart';
+import 'package:testify/models/verse.dart';
+import 'package:testify/services/quiz_service.dart';
+import 'package:testify/supabase/supabase_config.dart';
+import 'package:testify/widgets/elephant_mascot.dart';
+import 'package:testify/widgets/verse_card.dart';
+import 'package:testify/screens/quiz_setup_screen.dart';
+import 'package:testify/screens/splash_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -300,7 +300,7 @@ class QuizHistoryCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${result.difficulty} • ${_formatDate(result.createdAt)}',
+                    _formatDate(result.createdAt),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),

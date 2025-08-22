@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:word__way/supabase/supabase_config.dart';
-import 'package:word__way/screens/dashboard_screen.dart';
-import 'package:word__way/widgets/elephant_mascot.dart';
+import 'package:testify/supabase/supabase_config.dart';
+import 'package:testify/screens/dashboard_screen.dart';
+import 'package:testify/widgets/elephant_mascot.dart';
 
 class AuthScreen extends StatefulWidget {
   final bool initialIsSignUp;

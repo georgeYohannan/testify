@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:word__way/models/verse.dart';
-import 'package:word__way/services/quiz_service.dart';
-import 'package:word__way/widgets/elephant_mascot.dart';
-import 'package:word__way/widgets/verse_card.dart';
-import 'package:word__way/screens/auth_screen.dart';
-import 'package:word__way/screens/dashboard_screen.dart';
-import 'package:word__way/supabase/supabase_config.dart';
+import 'package:testify/models/verse.dart';
+import 'package:testify/services/quiz_service.dart';
+import 'package:testify/widgets/elephant_mascot.dart';
+import 'package:testify/widgets/verse_card.dart';
+import 'package:testify/screens/auth_screen.dart';
+import 'package:testify/screens/dashboard_screen.dart';
+import 'package:testify/supabase/supabase_config.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

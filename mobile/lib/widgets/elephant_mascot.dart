@@ -83,7 +83,6 @@ class _ElephantMascotState extends State<ElephantMascot>
       case ElephantState.incorrect:
         return 'https://pixabay.com/get/gd39b2c4ba8ae2972ee7d8f0b29d60994291020abf8520e7e9f184eace017b76692a5d1555baf9fb8ed65c14cf5af2de691c07e82be454907dbf50034543fd532_1280.png'; // Sad elephant
       case ElephantState.neutral:
-      default:
         return 'https://pixabay.com/get/g7b7e2a191870be4b37f19f29415c6885ea804c95ca2b950fe9eb49fed7c947b318561ec0027d82980c84a307fe6bd1183cf125cdaf2ce005cf5ccc2d87273930_1280.jpg'; // Neutral elephant
     }
   }
@@ -98,7 +97,6 @@ class _ElephantMascotState extends State<ElephantMascot>
       case ElephantState.encouraging:
         return theme.colorScheme.secondary.withValues(alpha: 0.1);
       case ElephantState.neutral:
-      default:
         return theme.colorScheme.primaryContainer.withValues(alpha: 0.3);
     }
   }

@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:word__way/models/quiz.dart';
-import 'package:word__way/models/verse.dart';
-import 'package:word__way/services/quiz_service.dart';
-import 'package:word__way/supabase/supabase_config.dart';
-import 'package:word__way/widgets/elephant_mascot.dart';
-import 'package:word__way/widgets/verse_card.dart';
-import 'package:word__way/screens/dashboard_screen.dart';
-import 'package:word__way/screens/quiz_setup_screen.dart';
+import 'package:testify/models/quiz.dart';
+import 'package:testify/models/verse.dart';
+import 'package:testify/services/quiz_service.dart';
+import 'package:testify/supabase/supabase_config.dart';
+import 'package:testify/widgets/elephant_mascot.dart';
+import 'package:testify/widgets/verse_card.dart';
+import 'package:testify/screens/dashboard_screen.dart';
+import 'package:testify/screens/quiz_setup_screen.dart';
 
 class ResultsScreen extends StatefulWidget {
   final List<Question> questions;
   final Map<String, String> answers;
   final String book;
-  final Difficulty difficulty;
+
 
   const ResultsScreen({
     super.key,
     required this.questions,
     required this.answers,
     required this.book,
-    required this.difficulty,
+
   });
 
   @override
@@ -29,8 +29,8 @@ class ResultsScreen extends StatefulWidget {
 class _ResultsScreenState extends State<ResultsScreen>
     with SingleTickerProviderStateMixin {
   late int _score;
-  late int _correctAnswers;
   List<Verse> _encouragementVerses = [];
+  bool _isLoadingVerses = true;
   bool _hasSubmitted = false;
   
   late AnimationController _animationController;
@@ -47,17 +47,26 @@ class _ResultsScreenState extends State<ResultsScreen>
   }
 
   void _calculateScore() {
-    _correctAnswers = 0;
-    for (final question in widget.questions) {
-      if (widget.answers[question.id] == question.correctOption) {
-        _correctAnswers++;
-      }
-    }
     _score = QuizService.calculateScore(widget.questions, widget.answers);
   }
 
-  void _loadEncouragementVerses() {
-    _encouragementVerses = QuizService.getEncouragementVerses(_score);
+  Future<void> _loadEncouragementVerses() async {
+    try {
+      final verses = await QuizService.getEncouragementVerses(_score);
+      if (mounted) {
+        setState(() {
+          _encouragementVerses = verses;
+          _isLoadingVerses = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingVerses = false;
+        });
+      }
+      print('Failed to load encouragement verses: $e');
+    }
   }
 
   Future<void> _saveResult() async {
@@ -70,7 +79,6 @@ class _ResultsScreenState extends State<ResultsScreen>
           id: '',
           userId: user.id,
           book: widget.book,
-          difficulty: widget.difficulty.displayName,
           score: _score,
           answers: widget.answers,
           createdAt: DateTime.now(),
@@ -206,7 +214,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '\$_correctAnswers out of ${widget.questions.length} correct',
+                                'Score: \$_score%',
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                                 ),
@@ -245,12 +253,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                                   Icons.menu_book,
                                   theme,
                                 ),
-                                _buildInfoRow(
-                                  'Difficulty',
-                                  widget.difficulty.displayName,
-                                  Icons.speed,
-                                  theme,
-                                ),
+
                                 _buildInfoRow(
                                   'Questions',
                                   '${widget.questions.length}',
@@ -265,7 +268,16 @@ class _ResultsScreenState extends State<ResultsScreen>
                         const SizedBox(height: 24),
                         
                         // Encouragement Verse
-                        if (_encouragementVerses.isNotEmpty)
+                        if (_isLoadingVerses)
+                          const Card(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          )
+                        else if (_encouragementVerses.isNotEmpty)
                           VerseCard(
                             verse: _encouragementVerses.first,
                             isCompact: true,
@@ -344,14 +356,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          question.verseReference,
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            fontStyle: FontStyle.italic,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                        ),
+
                                       ],
                                     ),
                                   ),

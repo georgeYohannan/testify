@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:word__way/models/verse.dart';
+import 'package:testify/models/verse.dart';
 
 class VerseCard extends StatelessWidget {
   final Verse verse;
