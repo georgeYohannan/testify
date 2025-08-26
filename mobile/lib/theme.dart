@@ -2,45 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class LightModeColors {
-  // Warm, joyful colors for Bible-based quiz app
-  static const lightPrimary = Color(0xFF6B46C1); // Royal purple - wisdom & spirituality
-  static const lightOnPrimary = Color(0xFFFFFFFF);
-  static const lightPrimaryContainer = Color(0xFFF3F4F6); // Light warm gray
-  static const lightOnPrimaryContainer = Color(0xFF374151);
-  static const lightSecondary = Color(0xFFF59E0B); // Warm gold - joy & celebration
-  static const lightOnSecondary = Color(0xFFFFFFFF);
-  static const lightTertiary = Color(0xFF10B981); // Encouraging green - growth
-  static const lightOnTertiary = Color(0xFFFFFFFF);
-  static const lightError = Color(0xFFEF4444); // Gentle red
-  static const lightOnError = Color(0xFFFFFFFF);
+  // Sky blue, orange, and white color scheme as specified in README
+  static const lightPrimary = Color(0xFF87CEEB); // Sky blue
+  static const lightOnPrimary = Color(0xFFFFFFFF); // White
+  static const lightPrimaryContainer = Color(0xFFE0F6FF); // Light sky blue
+  static const lightOnPrimaryContainer = Color(0xFF1E3A8A); // Dark blue text
+  static const lightSecondary = Color(0xFFFF8C00); // Orange
+  static const lightOnSecondary = Color(0xFFFFFFFF); // White
+  static const lightTertiary = Color(0xFFFFA500); // Bright orange
+  static const lightOnTertiary = Color(0xFFFFFFFF); // White
+  static const lightError = Color(0xFFEF4444); // Red
+  static const lightOnError = Color(0xFFFFFFFF); // White
   static const lightErrorContainer = Color(0xFFFEE2E2);
   static const lightOnErrorContainer = Color(0xFFB91C1C);
-  static const lightInversePrimary = Color(0xFF10B981);
+  static const lightInversePrimary = Color(0xFF87CEEB); // Sky blue
   static const lightShadow = Color(0xFF000000);
-  static const lightSurface = Color(0xFFFFFBF0); // Warm white
-  static const lightOnSurface = Color(0xFF374151);
-  static const lightAppBarBackground = Color(0xFF6B46C1);
+  static const lightSurface = Color(0xFFFFFFFF); // White
+  static const lightOnSurface = Color(0xFF1E3A8A); // Dark blue text
+  static const lightAppBarBackground = Color(0xFF87CEEB); // Sky blue
 }
 
 class DarkModeColors {
-  // Warm, comforting dark colors
-  static const darkPrimary = Color(0xFF8B5CF6); // Lighter purple for dark mode
-  static const darkOnPrimary = Color(0xFF1F2937);
-  static const darkPrimaryContainer = Color(0xFF4C1D95); // Deep purple
-  static const darkOnPrimaryContainer = Color(0xFFF3F4F6);
-  static const darkSecondary = Color(0xFFFBBF24); // Golden yellow
-  static const darkOnSecondary = Color(0xFF1F2937);
-  static const darkTertiary = Color(0xFF34D399); // Mint green
-  static const darkOnTertiary = Color(0xFF1F2937);
+  // Sky blue, orange, and black color scheme as specified in README
+  static const darkPrimary = Color(0xFF87CEEB); // Sky blue
+  static const darkOnPrimary = Color(0xFF000000); // Black
+  static const darkPrimaryContainer = Color(0xFF1E3A8A); // Dark blue
+  static const darkOnPrimaryContainer = Color(0xFF87CEEB); // Sky blue text
+  static const darkSecondary = Color(0xFFFF8C00); // Orange
+  static const darkOnSecondary = Color(0xFF000000); // Black
+  static const darkTertiary = Color(0xFFFFA500); // Bright orange
+  static const darkOnTertiary = Color(0xFF000000); // Black
   static const darkError = Color(0xFFF87171); // Soft red
-  static const darkOnError = Color(0xFF1F2937);
+  static const darkOnError = Color(0xFF000000); // Black
   static const darkErrorContainer = Color(0xFFB91C1C);
   static const darkOnErrorContainer = Color(0xFFFEE2E2);
-  static const darkInversePrimary = Color(0xFF6B46C1);
+  static const darkInversePrimary = Color(0xFF87CEEB); // Sky blue
   static const darkShadow = Color(0xFF000000);
-  static const darkSurface = Color(0xFF1F2937); // Warm dark gray
-  static const darkOnSurface = Color(0xFFF9FAFB);
-  static const darkAppBarBackground = Color(0xFF4C1D95);
+  static const darkSurface = Color(0xFF000000); // Black
+  static const darkOnSurface = Color(0xFF87CEEB); // Sky blue text
+  static const darkAppBarBackground = Color(0xFF1E3A8A); // Dark blue
 }
 
 class FontSizes {

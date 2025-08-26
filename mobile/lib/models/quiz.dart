@@ -39,6 +39,8 @@ class QuizResult {
   final String userId;
   final String book;
   final int score;
+  final int totalQuestions;
+  final int timeInSeconds;
   final Map<String, dynamic> answers;
   final DateTime createdAt;
 
@@ -47,6 +49,8 @@ class QuizResult {
     required this.userId,
     required this.book,
     required this.score,
+    required this.totalQuestions,
+    required this.timeInSeconds,
     required this.answers,
     required this.createdAt,
   });
@@ -57,6 +61,8 @@ class QuizResult {
       userId: json['user_id'] ?? '',
       book: json['book'] ?? '',
       score: json['score'] ?? 0,
+      totalQuestions: json['total_questions'] ?? 0,
+      timeInSeconds: json['time_in_seconds'] ?? 0,
       answers: Map<String, dynamic>.from(json['answers'] ?? {}),
       createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
     );
@@ -68,6 +74,8 @@ class QuizResult {
       'user_id': userId,
       'book': book,
       'score': score,
+      'total_questions': totalQuestions,
+      'time_in_seconds': timeInSeconds,
       'answers': answers,
       'created_at': createdAt.toIso8601String(),
     };

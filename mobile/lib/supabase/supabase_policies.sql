@@ -14,9 +14,9 @@ CREATE POLICY "Users can insert own profile" ON users
 CREATE POLICY "Users can update own profile" ON users
     FOR UPDATE USING (auth.uid() = id) WITH CHECK (true);
 
--- Questions table policies (allow authenticated users to read all questions)
-CREATE POLICY "Authenticated users can view questions" ON questions
-    FOR SELECT TO authenticated USING (true);
+-- Questions table policies (allow anonymous users to read questions for quiz functionality)
+CREATE POLICY "Anyone can view questions" ON questions
+    FOR SELECT USING (true);
 
 CREATE POLICY "Authenticated users can insert questions" ON questions
     FOR INSERT TO authenticated WITH CHECK (true);
@@ -27,9 +27,9 @@ CREATE POLICY "Authenticated users can update questions" ON questions
 CREATE POLICY "Authenticated users can delete questions" ON questions
     FOR DELETE TO authenticated USING (true);
 
--- Verses table policies (allow authenticated users to read all verses)
-CREATE POLICY "Authenticated users can view verses" ON verses
-    FOR SELECT TO authenticated USING (true);
+-- Verses table policies (allow anonymous users to read verses for daily inspiration)
+CREATE POLICY "Anyone can view verses" ON verses
+    FOR SELECT USING (true);
 
 CREATE POLICY "Authenticated users can insert verses" ON verses
     FOR INSERT TO authenticated WITH CHECK (true);

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:testify/supabase/supabase_config.dart';
-import 'package:testify/screens/dashboard_screen.dart';
 import 'package:testify/widgets/elephant_mascot.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -69,18 +69,28 @@ class _AuthScreenState extends State<AuthScreen> {
           });
         }
       } else {
-        await SupabaseAuth.signIn(
+        // Sign in
+        final authResponse = await SupabaseAuth.signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
         
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
-          );
+          // Check if we got a valid user
+          if (authResponse.user != null) {
+            print('✓ User signed in successfully: ${authResponse.user!.email}');
+            print('✓ Navigating to dashboard...');
+            context.go('/dashboard');
+          } else {
+            print('✗ Sign in failed: No user returned');
+            setState(() {
+              _errorMessage = 'Sign in failed. Please try again.';
+            });
+          }
         }
       }
     } catch (e) {
+      print('✗ Authentication error: $e');
       setState(() {
         _errorMessage = _getErrorMessage(e.toString());
       });
@@ -98,12 +108,21 @@ class _AuthScreenState extends State<AuthScreen> {
       return 'Invalid email or password. Please try again.';
     } else if (error.contains('User already registered')) {
       return 'An account with this email already exists.';
-    } else if (error.contains('Password should be at least')) {
+    } else if (error.contains('Password should be at least 6 characters')) {
       return 'Password must be at least 6 characters long.';
     } else if (error.contains('Invalid email')) {
       return 'Please enter a valid email address.';
+    } else {
+      return 'An error occurred. Please try again.';
     }
-    return 'Something went wrong. Please try again.';
+  }
+
+  void _toggleAuthMode() {
+    setState(() {
+      _isSignUp = !_isSignUp;
+      _errorMessage = null;
+      _passwordController.clear();
+    });
   }
 
   @override
@@ -111,189 +130,217 @@ class _AuthScreenState extends State<AuthScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isSignUp ? 'Create Account' : 'Welcome Back'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              
-              // Mascot
-              const ElephantMascot(
-                state: ElephantState.neutral,
-                size: 100,
-                message: 'Ready to test your Bible knowledge?',
-              ),
-              
-              const SizedBox(height: 40),
-              
-              // Display Name Field (Sign Up Only)
-              if (_isSignUp) ...[
-                TextFormField(
-                  controller: _displayNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Display Name',
-                    prefixIcon: const Icon(Icons.person),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (_isSignUp && (value == null || value.trim().isEmpty)) {
-                      return 'Please enter your display name';
-                    }
-                    return null;
-                  },
-                ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.primaryContainer,
+              theme.colorScheme.surface,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                
+                // App Logo and Title
+                const ElephantMascot(size: 80),
                 const SizedBox(height: 16),
-              ],
-              
-              // Email Field
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: const Icon(Icons.email),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                Text(
+                  'Testify',
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimary,
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Please enter a valid email address';
-                  }
-                  return null;
-                },
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Password Field
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 8),
+                Text(
+                  _isSignUp ? 'Create your account' : 'Welcome back!',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  if (_isSignUp && value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Error Message
-              if (_errorMessage != null) ...[
+                
+                const SizedBox(height: 40),
+                
+                // Auth Form
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: theme.colorScheme.onErrorContainer,
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: theme.colorScheme.onErrorContainer,
+                    ],
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_isSignUp) ...[
+                          TextFormField(
+                            controller: _displayNameController,
+                            decoration: InputDecoration(
+                              labelText: 'Display Name',
+                              prefixIcon: const Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (_isSignUp && (value == null || value.trim().isEmpty)) {
+                                return 'Please enter your display name';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: const Icon(Icons.email),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (_isSignUp && value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: theme.colorScheme.onErrorContainer,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                        
+                        const SizedBox(height: 24),
+                        
+                        FilledButton(
+                          onPressed: _isLoading ? null : _handleAuth,
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: theme.colorScheme.secondary,
+                            foregroundColor: theme.colorScheme.onSecondary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Text(
+                                  _isSignUp ? 'Sign Up' : 'Sign In',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        TextButton(
+                          onPressed: _toggleAuthMode,
+                          child: Text(
+                            _isSignUp
+                                ? 'Already have an account? Sign In'
+                                : 'Don\'t have an account? Sign Up',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              
-              // Auth Button
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _isLoading ? null : _handleAuth,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(_isSignUp ? Icons.person_add : Icons.login),
-                  label: Text(_isSignUp ? 'Sign Up' : 'Sign In'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Switch Auth Mode
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isSignUp = !_isSignUp;
-                    _errorMessage = null;
-                    _passwordController.clear();
-                  });
-                },
-                child: RichText(
-                  text: TextSpan(
-                    style: theme.textTheme.bodyMedium,
-                    children: [
-                      TextSpan(
-                        text: _isSignUp
-                            ? 'Already have an account? '
-                            : "Don't have an account? ",
-                      ),
-                      TextSpan(
-                        text: _isSignUp ? 'Sign In' : 'Sign Up',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                
+                const SizedBox(height: 24),
+                
+                // Back to splash
+                TextButton(
+                  onPressed: () => context.go('/'),
+                  child: Text(
+                    'Back to Home',
+                    style: TextStyle(
+                      color: theme.colorScheme.onPrimary.withValues(alpha: 0.7),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:testify/models/quiz.dart';
 import 'package:testify/models/user.dart';
 import 'package:testify/models/verse.dart';
@@ -6,8 +7,7 @@ import 'package:testify/services/quiz_service.dart';
 import 'package:testify/supabase/supabase_config.dart';
 import 'package:testify/widgets/elephant_mascot.dart';
 import 'package:testify/widgets/verse_card.dart';
-import 'package:testify/screens/quiz_setup_screen.dart';
-import 'package:testify/screens/splash_screen.dart';
+import 'package:flutter/foundation.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,6 +30,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadDashboardData() async {
     try {
+      if (kDebugMode) {
+        print('Loading dashboard data...');
+      }
+      
       final futures = await Future.wait([
         SupabaseAuth.getCurrentAppUser(),
         QuizService.getDailyVerse(),
@@ -38,8 +42,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final user = futures[0] as AppUser?;
       final verse = futures[1] as Verse;
 
+      if (kDebugMode) {
+        print('✓ Current user: ${user?.email ?? 'None'}');
+        print('✓ Daily verse loaded: ${verse.reference}');
+      }
+
       if (user != null) {
         final history = await QuizService.getQuizHistory(user.id);
+        
+        if (kDebugMode) {
+          print('✓ Quiz history loaded: ${history.length} results');
+        }
         
         if (mounted) {
           setState(() {
@@ -49,12 +62,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _isLoading = false;
           });
         }
+      } else {
+        if (kDebugMode) {
+          print('⚠ No current user found, redirecting to auth');
+        }
+        if (mounted) {
+          context.go('/auth');
+        }
       }
     } catch (e) {
+      if (kDebugMode) {
+        print('✗ Dashboard loading failed: $e');
+      }
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        // Show error and redirect to auth
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load dashboard: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        context.go('/auth');
       }
     }
   }
@@ -63,15 +94,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       await SupabaseAuth.signOut();
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const SplashScreen()),
-          (route) => false,
-        );
+        context.go('/');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error signing out: \$e')),
+          SnackBar(content: Text('Error signing out: $e')),
         );
       }
     }
@@ -91,6 +119,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Dashboard'),
         centerTitle: true,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         actions: [
           PopupMenuButton(
             icon: const Icon(Icons.more_vert),
@@ -109,230 +139,176 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadDashboardData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Section
-              Row(
-                children: [
-                  const ElephantMascot(
-                    state: ElephantState.encouraging,
-                    size: 60,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome back,',
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                        Text(
-                          _currentUser?.displayName ?? 'Friend',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Daily Verse
-              if (_dailyVerse != null)
-                VerseCard(verse: _dailyVerse!),
-              
-              const SizedBox(height: 24),
-              
-              // Start New Quiz Button
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const QuizSetupScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.quiz),
-                  label: const Text('Start New Quiz'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
-              // Quiz History Section
-              Row(
-                children: [
-                  Icon(
-                    Icons.history,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Quiz History',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Quiz History List
-              if (_quizHistory.isEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.quiz_outlined,
-                          size: 48,
-                          color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No quizzes yet',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Take your first quiz to see your progress here!',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _quizHistory.length,
-                  itemBuilder: (context, index) {
-                    final result = _quizHistory[index];
-                    return QuizHistoryCard(result: result);
-                  },
-                ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.colorScheme.primaryContainer,
+              theme.colorScheme.surface,
             ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Welcome Section
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const ElephantMascot(size: 60),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Welcome back, ${_currentUser?.displayName ?? 'Friend'}! 🎉',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Ready to test your Bible knowledge?',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Quick Actions
+                Text(
+                  'Quick Actions',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => context.go('/quiz-setup'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          backgroundColor: theme.colorScheme.secondary,
+                          foregroundColor: theme.colorScheme.onSecondary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.quiz),
+                        label: const Text('Start Quiz'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          // Navigate to quiz history or profile
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Profile feature coming soon!')),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.person),
+                        label: const Text('Profile'),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // Daily Verse
+                if (_dailyVerse != null) ...[
+                  Text(
+                    'Verse of the Day',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  VerseCard(verse: _dailyVerse!),
+                  const SizedBox(height: 32),
+                ],
+                
+                // Recent Quiz History
+                if (_quizHistory.isNotEmpty) ...[
+                  Text(
+                    'Recent Quizzes',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _quizHistory.take(3).length,
+                    itemBuilder: (context, index) {
+                      final result = _quizHistory[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: result.score >= (result.totalQuestions / 2)
+                                ? Colors.green
+                                : Colors.orange,
+                            child: Icon(
+                              result.score >= (result.totalQuestions / 2)
+                                  ? Icons.check
+                                  : Icons.trending_up,
+                              color: Colors.white,
+                            ),
+                          ),
+                          title: Text('Quiz ${index + 1}'),
+                          subtitle: Text('Score: ${result.score}/${result.totalQuestions}'),
+                          trailing: Text(
+                            '${result.timeInSeconds}s',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+                
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),
     );
-  }
-}
-
-class QuizHistoryCard extends StatelessWidget {
-  final QuizResult result;
-
-  const QuizHistoryCard({
-    super.key,
-    required this.result,
-  });
-
-  Color _getScoreColor(BuildContext context, int score) {
-    final theme = Theme.of(context);
-    if (score >= 80) return theme.colorScheme.tertiary;
-    if (score >= 60) return theme.colorScheme.secondary;
-    return theme.colorScheme.error;
-  }
-
-  IconData _getScoreIcon(int score) {
-    if (score >= 80) return Icons.star;
-    if (score >= 60) return Icons.thumb_up;
-    return Icons.trending_up;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scoreColor = _getScoreColor(context, result.score);
-    
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: scoreColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                _getScoreIcon(result.score),
-                color: scoreColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    result.book,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    _formatDate(result.createdAt),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              '${result.score}%',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: scoreColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-    
-    if (difference.inDays == 0) {
-      return 'Today';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
   }
 }
