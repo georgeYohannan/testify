@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:testify/services/quiz_service.dart';
 import 'package:testify/widgets/elephant_mascot.dart';
+import 'package:flutter/foundation.dart';
 
 class QuizSetupScreen extends StatefulWidget {
   const QuizSetupScreen({super.key});
@@ -22,7 +23,8 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   void initState() {
     super.initState();
     _loadAvailableBooks();
-    _testDatabaseConnection();
+    // Temporarily disabled to fix loading issue
+    // _testDatabaseConnection();
   }
 
   Future<void> _testDatabaseConnection() async {
@@ -31,6 +33,10 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
 
   Future<void> _loadAvailableBooks() async {
     try {
+      if (kDebugMode) {
+        print('🔄 Loading available books...');
+      }
+      
       setState(() {
         _isLoadingBooks = true;
         _errorMessage = null;
@@ -38,13 +44,31 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
 
       final books = await QuizService.getAvailableBooks();
       
+      if (kDebugMode) {
+        print('✓ Books loaded: ${books.length}');
+        print('✓ Available books: ${books.take(10).join(', ')}${books.length > 10 ? '...' : ''}');
+      }
+      
       if (mounted) {
         setState(() {
           _availableBooks = books;
           _isLoadingBooks = false;
         });
+        
+        // Auto-select first book if available
+        if (books.isNotEmpty && _selectedBook == null) {
+          setState(() {
+            _selectedBook = books.first;
+          });
+          if (kDebugMode) {
+            print('✓ Auto-selected first book: ${books.first}');
+          }
+        }
       }
     } catch (e) {
+      if (kDebugMode) {
+        print('✗ Failed to load available books: $e');
+      }
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to load available books: $e';
@@ -249,6 +273,28 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                 const SizedBox(height: 32),
                 
                 // Start Quiz Button
+                if (kDebugMode) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      border: Border.all(color: Colors.orange),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Debug Info:', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                        Text('Selected Book: ${_selectedBook ?? "None"}'),
+                        Text('Available Books: ${_availableBooks.length}'),
+                        Text('Is Loading: $_isLoading'),
+                        Text('Start Button Enabled: ${_selectedBook != null && !_isLoading}'),
+                      ],
+                    ),
+                  ),
+                ],
+                
                 FilledButton(
                   onPressed: _isLoading || _selectedBook == null ? null : _startQuiz,
                   style: FilledButton.styleFrom(

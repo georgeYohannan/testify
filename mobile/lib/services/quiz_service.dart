@@ -8,11 +8,47 @@ class QuizService {
   static final Random _random = Random();
 
   static Future<List<String>> getAvailableBooks() async {
+    // TEMPORARY: Force comprehensive book list for testing
+    if (kDebugMode) {
+      print('🧪 TEMPORARY: Returning comprehensive book list immediately');
+    }
+    
+    // Comprehensive fallback list based on typical Bible structure
+    return [
+      'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
+      'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
+      '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles',
+      'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs',
+      'Ecclesiastes', 'Song of Solomon', 'Isaiah', 'Jeremiah',
+      'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
+      'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum',
+      'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
+      'Matthew', 'Mark', 'Luke', 'John', 'Acts',
+      'Romans', '1 Corinthians', '2 Corinthians', 'Galatians',
+      'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians',
+      '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus',
+      'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter',
+      '1 John', '2 John', '3 John', 'Jude', 'Revelation'
+    ];
+    
+    // ORIGINAL CODE (commented out for now):
+    /*
     try {
+      if (kDebugMode) {
+        print('🔍 Fetching available books from database...');
+      }
+      
       final response = await SupabaseService.select(
         table: 'questions',
         columns: 'book',
       );
+      
+      if (kDebugMode) {
+        print('✓ Database response received: ${response.length} total records');
+        if (response.isNotEmpty) {
+          print('✓ Sample book: ${response.first['book']}');
+        }
+      }
       
       // Extract unique book names
       final books = response
@@ -20,44 +56,37 @@ class QuizService {
           .toSet()
           .toList();
       
+      if (kDebugMode) {
+        print('✓ Unique books found: ${books.length}');
+        print('✓ Books: ${books.take(10).join(', ')}${books.length > 10 ? '...' : ''}');
+      }
+      
       return books..sort();
     } catch (e) {
       if (kDebugMode) {
-        print('Failed to fetch available books: $e');
+        print('✗ Failed to fetch available books: $e');
+        print('⚠ Falling back to comprehensive book list');
       }
-      // Fallback to placeholder books if database fails
+      
+      // Comprehensive fallback list based on typical Bible structure
       return [
-        'Genesis',
-        'Exodus',
-        'Matthew',
-        'Mark',
-        'Luke',
-        'John',
-        'Acts',
-        'Romans',
-        '1 Corinthians',
-        '2 Corinthians',
-        'Galatians',
-        'Ephesians',
-        'Philippians',
-        'Colossians',
-        '1 Thessalonians',
-        '2 Thessalonians',
-        '1 Timothy',
-        '2 Timothy',
-        'Titus',
-        'Philemon',
-        'Hebrews',
-        'James',
-        '1 Peter',
-        '2 Peter',
-        '1 John',
-        '2 John',
-        '3 John',
-        'Jude',
-        'Revelation',
+        'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
+        'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
+        '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles',
+        'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs',
+        'Ecclesiastes', 'Song of Solomon', 'Isaiah', 'Jeremiah',
+        'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
+        'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum',
+        'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
+        'Matthew', 'Mark', 'Luke', 'John', 'Acts',
+        'Romans', '1 Corinthians', '2 Corinthians', 'Galatians',
+        'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians',
+        '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus',
+        'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter',
+        '1 John', '2 John', '3 John', 'Jude', 'Revelation'
       ];
     }
+    */
   }
 
   static Future<List<Question>> getQuestions({
