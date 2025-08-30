@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS quiz_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     book TEXT NOT NULL,
-    score INTEGER NOT NULL CHECK (score >= 0 AND score <= 100),
+    score INTEGER NOT NULL CHECK (score >= 0),
+    total_questions INTEGER NOT NULL CHECK (total_questions > 0),
+    time_in_seconds INTEGER NOT NULL CHECK (time_in_seconds >= 0),
     answers JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

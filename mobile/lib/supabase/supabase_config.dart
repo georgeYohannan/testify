@@ -297,13 +297,23 @@ class SupabaseService {
     required Map<String, dynamic> data,
   }) async {
     try {
-      await SupabaseConfig.client.from(table).insert(data);
       if (kDebugMode) {
-        print('Data inserted into $table: $data');
+        print('🔄 SupabaseService: Inserting into table $table');
+        print('🔄 SupabaseService: Data: $data');
+      }
+      
+      await SupabaseConfig.client.from(table).insert(data);
+      
+      if (kDebugMode) {
+        print('✓ SupabaseService: Data inserted into $table successfully');
+        print('✓ SupabaseService: Inserted data: $data');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Database insert failed for table $table: $e');
+        print('✗ SupabaseService: Database insert failed for table $table: $e');
+        print('✗ SupabaseService: Error type: ${e.runtimeType}');
+        print('✗ SupabaseService: Stack trace: ${StackTrace.current}');
+        print('✗ SupabaseService: Attempted data: $data');
       }
       rethrow;
     }

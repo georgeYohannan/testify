@@ -1,20 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:testify/widgets/elephant_mascot.dart';
+import 'package:testify/models/quiz.dart';
+import 'package:testify/services/quiz_service.dart';
+import 'package:testify/supabase/supabase_config.dart';
+import 'package:flutter/foundation.dart';
 
-class ResultsScreen extends StatelessWidget {
+class ResultsScreen extends StatefulWidget {
   final int score;
   final int totalQuestions;
   final int timeInSeconds;
+  final String book;
 
   const ResultsScreen({
     super.key,
     required this.score,
     required this.totalQuestions,
     required this.timeInSeconds,
+    required this.book,
   });
 
-  double get _percentage => (score / totalQuestions) * 100;
+  @override
+  State<ResultsScreen> createState() => _ResultsScreenState();
+}
+
+class _ResultsScreenState extends State<ResultsScreen> {
+  
+  @override
+  void initState() {
+    super.initState();
+    _saveQuizResult();
+  }
+  
+  Future<void> _saveQuizResult() async {
+    try {
+      if (kDebugMode) {
+        print('🔄 Starting to save quiz result...');
+        print('🔄 Book: ${widget.book}');
+        print('🔄 Score: ${widget.score}/${widget.totalQuestions}');
+        print('🔄 Time: ${widget.timeInSeconds}s');
+      }
+      
+      final user = SupabaseAuth.currentUser;
+      if (kDebugMode) {
+        print('🔄 Current user: ${user?.id ?? 'NULL'}');
+        print('🔄 User email: ${user?.email ?? 'NULL'}');
+      }
+      
+      if (user != null) {
+        final quizResult = QuizResult(
+          id: '', // Let the database generate the UUID automatically
+          userId: user.id,
+          book: widget.book,
+          score: widget.score,
+          totalQuestions: widget.totalQuestions,
+          timeInSeconds: widget.timeInSeconds,
+          answers: {}, // Empty answers for now
+          createdAt: DateTime.now(),
+        );
+        
+        if (kDebugMode) {
+          print('🔄 Created QuizResult object: ${quizResult.toJson()}');
+        }
+        
+        await QuizService.saveQuizResult(quizResult);
+        
+        if (kDebugMode) {
+          print('✓ Quiz result saved successfully');
+          print('✓ Book: ${widget.book}');
+          print('✓ Score: ${widget.score}/${widget.totalQuestions}');
+          print('✓ Time: ${widget.timeInSeconds}s');
+        }
+      } else {
+        if (kDebugMode) {
+          print('⚠ No current user found, cannot save quiz result');
+          print('⚠ This might be because Supabase auth is not working properly');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('✗ Failed to save quiz result: $e');
+        print('✗ Error type: ${e.runtimeType}');
+        print('✗ Stack trace: ${StackTrace.current}');
+      }
+    }
+  }
+  
+  double get _percentage => (widget.score / widget.totalQuestions) * 100;
   
   String get _grade {
     if (_percentage >= 90) return 'A+';
@@ -155,7 +227,7 @@ class ResultsScreen extends StatelessWidget {
                           _buildScoreItem(
                             context,
                             'Score',
-                            '$score/$totalQuestions',
+                            '${widget.score}/${widget.totalQuestions}',
                             Icons.quiz,
                             theme.colorScheme.secondary,
                           ),
@@ -169,7 +241,7 @@ class ResultsScreen extends StatelessWidget {
                           _buildScoreItem(
                             context,
                             'Time',
-                            '${timeInSeconds}s',
+                            '${widget.timeInSeconds}s',
                             Icons.timer,
                             theme.colorScheme.tertiary,
                           ),
@@ -210,15 +282,15 @@ class ResultsScreen extends StatelessWidget {
                       _buildAnalysisRow(
                         context,
                         'Correct Answers',
-                        score,
-                        totalQuestions,
+                        widget.score,
+                        widget.totalQuestions,
                         Colors.green,
                       ),
                       _buildAnalysisRow(
                         context,
                         'Incorrect Answers',
-                        totalQuestions - score,
-                        totalQuestions,
+                        widget.totalQuestions - widget.score,
+                        widget.totalQuestions,
                         Colors.red,
                       ),
                       _buildAnalysisRow(

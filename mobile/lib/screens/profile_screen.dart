@@ -254,6 +254,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 
                 const SizedBox(height: DesignTokens.xl),
                 
+                // Debug Buttons (only in debug mode)
+                if (kDebugMode) ...[
+                  const SizedBox(height: DesignTokens.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: LiquidGlassContainer(
+                          onTap: () => _testDatabaseConnection(),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: DesignTokens.lg,
+                            vertical: DesignTokens.md,
+                          ),
+                          backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                          borderColor: Colors.orange.withValues(alpha: 0.3),
+                          child: Text(
+                            'Test Database',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.orange,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: DesignTokens.sm),
+                      Expanded(
+                        child: LiquidGlassContainer(
+                          onTap: () => _testInsertQuizResult(),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: DesignTokens.lg,
+                            vertical: DesignTokens.md,
+                          ),
+                          backgroundColor: Colors.green.withValues(alpha: 0.1),
+                          borderColor: Colors.green.withValues(alpha: 0.3),
+                          child: Text(
+                            'Test Insert',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.green,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                
+                const SizedBox(height: DesignTokens.md),
+                
                 // Back Button
                 LiquidGlassContainer(
                   onTap: () => context.go('/dashboard'),
@@ -648,5 +698,101 @@ class _ProfileScreenState extends State<ProfileScreen> {
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     return months[month - 1];
+  }
+  
+  Future<void> _testDatabaseConnection() async {
+    try {
+      if (kDebugMode) {
+        print('🔄 Testing database connection from profile screen...');
+      }
+      
+      await QuizService.testDatabaseConnection();
+      
+      if (kDebugMode) {
+        print('✓ Database connection test completed');
+      }
+      
+      // Refresh the profile data after testing
+      await _loadProfileData();
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('✗ Database connection test failed: $e');
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Database test failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  Future<void> _testInsertQuizResult() async {
+    try {
+      if (kDebugMode) {
+        print('🔄 Testing manual quiz result insertion...');
+      }
+      
+      final user = SupabaseAuth.currentUser;
+      if (user == null) {
+        if (kDebugMode) {
+          print('⚠ No current user found for test insertion');
+        }
+        return;
+      }
+      
+      // Create a test quiz result
+      final testQuizResult = QuizResult(
+        id: '', // Let database generate UUID automatically
+        userId: user.id,
+        book: 'Test Book',
+        score: 8,
+        totalQuestions: 10,
+        timeInSeconds: 120,
+        answers: {'test': 'answer'},
+        createdAt: DateTime.now(),
+      );
+      
+      if (kDebugMode) {
+        print('🔄 Test quiz result: ${testQuizResult.toJson()}');
+      }
+      
+      // Try to save it
+      await QuizService.saveQuizResult(testQuizResult);
+      
+      if (kDebugMode) {
+        print('✓ Test quiz result inserted successfully');
+      }
+      
+      // Refresh the profile data to see if it appears
+      await _loadProfileData();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Test quiz result inserted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('✗ Test quiz result insertion failed: $e');
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Test insertion failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

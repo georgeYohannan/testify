@@ -148,19 +148,29 @@ class QuizService {
 
   static Future<void> saveQuizResult(QuizResult result) async {
     try {
+      if (kDebugMode) {
+        print('🔄 QuizService: Attempting to save quiz result...');
+        print('🔄 QuizService: Data to save: ${result.toJson()}');
+      }
+      
       await SupabaseService.insert(
         table: 'quiz_history',
         data: result.toJson(),
       );
+      
       if (kDebugMode) {
-        print('Quiz result saved to database: ${result.toJson()}');
+        print('✓ QuizService: Quiz result saved to database successfully');
+        print('✓ QuizService: Saved data: ${result.toJson()}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Failed to save quiz result to database: $e');
-        print('Quiz result saved locally: ${result.toJson()}');
+        print('✗ QuizService: Failed to save quiz result to database: $e');
+        print('✗ QuizService: Error type: ${e.runtimeType}');
+        print('✗ QuizService: Stack trace: ${StackTrace.current}');
+        print('✗ QuizService: Quiz result data: ${result.toJson()}');
       }
       // Could implement local storage fallback here
+      rethrow; // Re-throw to see the error in the calling code
     }
   }
 
@@ -185,7 +195,7 @@ class QuizService {
 
 
 
-  // Test method to verify database connection
+  // Test method to verify database connection and quiz_history table
   static Future<void> testDatabaseConnection() async {
     try {
       if (kDebugMode) {
@@ -262,6 +272,44 @@ class QuizService {
       } catch (e) {
         if (kDebugMode) {
           print('✗ Failed to get Genesis questions: $e');
+        }
+      }
+      
+      // Test 5: Check quiz_history table structure and data
+      try {
+        if (kDebugMode) {
+          print('🔄 Testing quiz_history table...');
+        }
+        
+        // Try to get the table structure
+        final quizHistoryData = await SupabaseService.select(
+          table: 'quiz_history',
+          limit: 1,
+        );
+        
+        if (kDebugMode) {
+          print('✓ Quiz history table accessible');
+          print('✓ Quiz history table structure: ${quizHistoryData.isNotEmpty ? quizHistoryData.first.keys.toList() : 'No columns found'}');
+          print('✓ Quiz history records count: ${quizHistoryData.length}');
+        }
+        
+        // Try to get all quiz history to see what's there
+        final allQuizHistory = await SupabaseService.select(
+          table: 'quiz_history',
+          limit: 100,
+        );
+        
+        if (kDebugMode) {
+          print('✓ Total quiz history records: ${allQuizHistory.length}');
+          if (allQuizHistory.isNotEmpty) {
+            print('✓ Sample quiz history record: ${allQuizHistory.first}');
+          }
+        }
+        
+      } catch (e) {
+        if (kDebugMode) {
+          print('✗ Failed to test quiz_history table: $e');
+          print('✗ This might indicate the table structure is incorrect or missing');
         }
       }
       

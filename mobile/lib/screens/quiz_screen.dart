@@ -161,7 +161,10 @@ class _QuizScreenState extends State<QuizScreen>
     final endTime = DateTime.now().millisecondsSinceEpoch;
     final timeInSeconds = (endTime - _startTime) ~/ 1000;
     
-    context.go('/results?score=$_score&total=${_questions.length}&time=$timeInSeconds');
+    // Extract book name from quiz ID
+    final book = widget.quizId.split('_')[0];
+    
+    context.go('/results?score=$_score&total=${_questions.length}&time=$timeInSeconds&book=$book');
   }
 
   @override

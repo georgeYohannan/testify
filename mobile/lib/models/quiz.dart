@@ -106,7 +106,7 @@ class QuizResult {
   final DateTime createdAt;
 
   QuizResult({
-    required this.id,
+    this.id = '', // Make ID optional with default empty string
     required this.userId,
     required this.book,
     required this.score,
@@ -130,8 +130,7 @@ class QuizResult {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
+    final data = <String, dynamic>{
       'user_id': userId,
       'book': book,
       'score': score,
@@ -140,6 +139,13 @@ class QuizResult {
       'answers': answers,
       'created_at': createdAt.toIso8601String(),
     };
+    
+    // Only include ID if it's not empty (let database generate UUID if empty)
+    if (id.isNotEmpty) {
+      data['id'] = id;
+    }
+    
+    return data;
   }
 }
 

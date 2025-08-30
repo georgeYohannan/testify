@@ -54,10 +54,12 @@ final GoRouter appRouter = GoRouter(
         final score = int.tryParse(state.uri.queryParameters['score'] ?? '0') ?? 0;
         final total = int.tryParse(state.uri.queryParameters['total'] ?? '0') ?? 0;
         final time = int.tryParse(state.uri.queryParameters['time'] ?? '0') ?? 0;
+        final book = state.uri.queryParameters['book'] ?? 'Unknown';
         return ResultsScreen(
           score: score,
           totalQuestions: total,
           timeInSeconds: time,
+          book: book,
         );
       },
     ),
