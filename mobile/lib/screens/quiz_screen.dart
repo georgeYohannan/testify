@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:testify/models/quiz.dart';
 import 'package:testify/services/quiz_service.dart';
+import 'package:flutter/foundation.dart';
 
 class QuizScreen extends StatefulWidget {
   final String quizId;
   final String difficulty;
+  final int questionCount; // Add question count parameter
 
   const QuizScreen({
     super.key,
     required this.quizId,
     required this.difficulty,
+    required this.questionCount, // Make it required
   });
 
   @override
@@ -53,10 +56,10 @@ class _QuizScreenState extends State<QuizScreen>
       // Extract book name from quiz ID
       final book = widget.quizId.split('_')[0];
       
-      // Fetch questions from database
+      // Fetch questions from database with random selection for books with many questions
       final questions = await QuizService.getQuestions(
         book: book,
-        limit: 5,
+        limit: widget.questionCount,
       );
 
       if (mounted) {
@@ -64,6 +67,10 @@ class _QuizScreenState extends State<QuizScreen>
           _questions = questions;
           _isLoading = false;
         });
+        
+        if (kDebugMode) {
+          print('📚 Loaded ${questions.length} questions for $book');
+        }
       }
     } catch (e) {
       if (mounted) {

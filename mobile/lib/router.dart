@@ -38,9 +38,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final quizId = state.uri.queryParameters['id'];
         final difficulty = state.uri.queryParameters['difficulty'];
+        final questions = int.tryParse(state.uri.queryParameters['questions'] ?? '10') ?? 10;
         return QuizScreen(
           quizId: quizId ?? '',
           difficulty: difficulty ?? 'medium',
+          questionCount: questions,
         );
       },
     ),

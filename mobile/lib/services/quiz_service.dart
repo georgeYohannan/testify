@@ -8,13 +8,14 @@ class QuizService {
   static final Random _random = Random();
 
   static Future<List<String>> getAvailableBooks() async {
-    // TEMPORARY: Force comprehensive book list for testing
+    // Return a static list of Bible books in order - no need to query database for this
     if (kDebugMode) {
-      print('🧪 TEMPORARY: Returning comprehensive book list immediately');
+      print('📚 Returning Bible book list in canonical order');
     }
     
-    // Comprehensive fallback list based on typical Bible structure
+    // Bible books in canonical order
     return [
+      // Old Testament (39 books)
       'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
       'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
       '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles',
@@ -23,6 +24,7 @@ class QuizService {
       'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
       'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum',
       'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
+      // New Testament (27 books)
       'Matthew', 'Mark', 'Luke', 'John', 'Acts',
       'Romans', '1 Corinthians', '2 Corinthians', 'Galatians',
       'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians',
@@ -30,63 +32,25 @@ class QuizService {
       'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter',
       '1 John', '2 John', '3 John', 'Jude', 'Revelation'
     ];
-    
-    // ORIGINAL CODE (commented out for now):
-    /*
+  }
+
+  static Future<int> getQuestionCountForBook(String book) async {
     try {
-      if (kDebugMode) {
-        print('🔍 Fetching available books from database...');
-      }
-      
       final response = await SupabaseService.select(
         table: 'questions',
-        columns: 'book',
+        filters: {
+          'book': book,
+        },
+        columns: 'id', // Only count IDs for performance
       );
       
-      if (kDebugMode) {
-        print('✓ Database response received: ${response.length} total records');
-        if (response.isNotEmpty) {
-          print('✓ Sample book: ${response.first['book']}');
-        }
-      }
-      
-      // Extract unique book names
-      final books = response
-          .map((json) => json['book'] as String)
-          .toSet()
-          .toList();
-      
-      if (kDebugMode) {
-        print('✓ Unique books found: ${books.length}');
-        print('✓ Books: ${books.take(10).join(', ')}${books.length > 10 ? '...' : ''}');
-      }
-      
-      return books..sort();
+      return response.length;
     } catch (e) {
       if (kDebugMode) {
-        print('✗ Failed to fetch available books: $e');
-        print('⚠ Falling back to comprehensive book list');
+        print('Failed to get question count for $book: $e');
       }
-      
-      // Comprehensive fallback list based on typical Bible structure
-      return [
-        'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
-        'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
-        '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles',
-        'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs',
-        'Ecclesiastes', 'Song of Solomon', 'Isaiah', 'Jeremiah',
-        'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
-        'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum',
-        'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
-        'Matthew', 'Mark', 'Luke', 'John', 'Acts',
-        'Romans', '1 Corinthians', '2 Corinthians', 'Galatians',
-        'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians',
-        '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus',
-        'Philemon', 'Hebrews', 'James', '1 Peter', '2 Peter',
-        '1 John', '2 John', '3 John', 'Jude', 'Revelation'
-      ];
+      return 0;
     }
-    */
   }
 
   static Future<List<Question>> getQuestions({
@@ -94,27 +58,69 @@ class QuizService {
     int limit = 5,
   }) async {
     try {
-      final response = await SupabaseService.select(
+      // First, get all questions for the book to determine total count
+      final allQuestionsResponse = await SupabaseService.select(
         table: 'questions',
         filters: {
           'book': book,
         },
-        limit: limit,
       );
 
-      if (response.isEmpty) {
+      if (allQuestionsResponse.isEmpty) {
         throw Exception('No questions available for $book');
       }
 
-      final questions = response.map((json) => Question.fromJson(json)).toList();
-      questions.shuffle(_random);
-      return questions.take(limit).toList();
+      final allQuestions = <Question>[];
+      
+      // Parse questions with error handling for individual items
+      for (final json in allQuestionsResponse) {
+        try {
+          final question = Question.fromJson(json);
+          if (question.options.isNotEmpty) {
+            allQuestions.add(question);
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ Skipping malformed question for $book: $e');
+          }
+          // Continue with other questions
+        }
+      }
+
+      if (allQuestions.isEmpty) {
+        throw Exception('No valid questions available for $book');
+      }
+
+      final totalQuestions = allQuestions.length;
+
+      if (kDebugMode) {
+        print('📚 Found $totalQuestions valid questions for $book');
+      }
+
+      // If we have more questions than the limit, randomly select questions
+      if (totalQuestions > limit) {
+        // Shuffle all questions and take the first 'limit' questions
+        allQuestions.shuffle(_random);
+        final selectedQuestions = allQuestions.take(limit).toList();
+        
+        if (kDebugMode) {
+          print('🎲 Randomly selected $limit questions from $totalQuestions available');
+        }
+        
+        return selectedQuestions;
+      } else {
+        // If we have fewer or equal questions to the limit, return all available
+        if (kDebugMode) {
+          print('📖 Returning all $totalQuestions questions (less than limit of $limit)');
+        }
+        return allQuestions;
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Failed to fetch questions: $e');
       }
-      // Fallback to placeholder questions if database fails
-      return _getPlaceholderQuestions(book, limit);
+      // No fallback questions - only use Supabase data
+      rethrow;
     }
   }
 
@@ -135,8 +141,8 @@ class QuizService {
       if (kDebugMode) {
         print('Failed to fetch daily verse: $e');
       }
-      // Fallback to placeholder verse if database fails
-      return _getPlaceholderVerse();
+      // No fallback verses - only use Supabase data
+      rethrow;
     }
   }
 
@@ -177,81 +183,7 @@ class QuizService {
     }
   }
 
-  // Fallback methods for when database is unavailable
-  static List<Question> _getPlaceholderQuestions(String book, int limit) {
-    final questions = [
-      Question(
-        id: '1',
-        book: book,
-        question: 'What is the first book of the Bible?',
-        options: ['Genesis', 'Exodus', 'Matthew', 'Revelation'],
-        correctOption: 'Genesis',
-      ),
-      Question(
-        id: '2',
-        book: book,
-        question: 'Who built the ark according to the Bible?',
-        options: ['Moses', 'Noah', 'Abraham', 'David'],
-        correctOption: 'Noah',
-      ),
-      Question(
-        id: '3',
-        book: book,
-        question: 'How many days and nights did Jesus fast in the wilderness?',
-        options: ['30', '40', '50', '60'],
-        correctOption: '40',
-      ),
-      Question(
-        id: '4',
-        book: book,
-        question: 'Who was the first king of Israel?',
-        options: ['David', 'Solomon', 'Saul', 'Samuel'],
-        correctOption: 'Saul',
-      ),
-      Question(
-        id: '5',
-        book: book,
-        question: 'What is the shortest verse in the Bible?',
-        options: ['Jesus wept', 'Rejoice always', 'Pray continually', 'Love one another'],
-        correctOption: 'Jesus wept',
-      ),
-    ];
-    
-    questions.shuffle(_random);
-    return questions.take(limit).toList();
-  }
 
-  static Verse _getPlaceholderVerse() {
-    final verses = [
-      Verse(
-        id: '1',
-        text: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.',
-        reference: 'John 3:16',
-      ),
-      Verse(
-        id: '2',
-        text: 'I can do all things through Christ who strengthens me.',
-        reference: 'Philippians 4:13',
-      ),
-      Verse(
-        id: '3',
-        text: 'Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.',
-        reference: 'Proverbs 3:5-6',
-      ),
-      Verse(
-        id: '4',
-        text: 'The Lord is my shepherd, I shall not want.',
-        reference: 'Psalm 23:1',
-      ),
-      Verse(
-        id: '5',
-        text: 'Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.',
-        reference: 'Joshua 1:9',
-      ),
-    ];
-    
-    return verses[_random.nextInt(verses.length)];
-  }
 
   // Test method to verify database connection
   static Future<void> testDatabaseConnection() async {

@@ -14,10 +14,13 @@ class QuizSetupScreen extends StatefulWidget {
 class _QuizSetupScreenState extends State<QuizSetupScreen> {
   String? _selectedBook;
   String _selectedDifficulty = 'medium';
-  bool _isLoading = true;
-  bool _isLoadingBooks = true;
+  int _selectedQuestionCount = 10; // Default to 10 questions
+  bool _isLoading = false; // Changed to false since we don't load books on startup
+  bool _isLoadingQuestionCount = false; // New loading state for question count
   List<String> _availableBooks = [];
   String? _errorMessage;
+  Map<String, int> _bookQuestionCounts = {}; // Track question counts per book
+  bool _canStartQuiz = false; // Track if quiz can be started
 
   @override
   void initState() {
@@ -27,9 +30,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     // _testDatabaseConnection();
   }
 
-  Future<void> _testDatabaseConnection() async {
-    await QuizService.testDatabaseConnection();
-  }
+
 
   Future<void> _loadAvailableBooks() async {
     try {
@@ -38,7 +39,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       }
       
       setState(() {
-        _isLoadingBooks = true;
         _errorMessage = null;
       });
 
@@ -52,7 +52,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       if (mounted) {
         setState(() {
           _availableBooks = books;
-          _isLoadingBooks = false;
         });
         
         // Auto-select first book if available
@@ -63,6 +62,8 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           if (kDebugMode) {
             print('✓ Auto-selected first book: ${books.first}');
           }
+          // Load question count for the selected book
+          _loadQuestionCountForBook(books.first);
         }
       }
     } catch (e) {
@@ -72,9 +73,57 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to load available books: $e';
-          _isLoadingBooks = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadQuestionCountForBook(String book) async {
+    try {
+      setState(() {
+        _isLoadingQuestionCount = true;
+        _errorMessage = null;
+      });
+
+      final questionCount = await QuizService.getQuestionCountForBook(book);
+      
+      if (mounted) {
+        setState(() {
+          _bookQuestionCounts[book] = questionCount;
+          _isLoadingQuestionCount = false;
+          _canStartQuiz = questionCount > 0; // Enable start button if questions exist
+        });
+        
+        if (kDebugMode) {
+          print('✓ Loaded $questionCount questions for $book');
+          print('✓ Start button enabled: $_canStartQuiz');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('✗ Failed to load question count for $book: $e');
+      }
+      if (mounted) {
+        setState(() {
+          _bookQuestionCounts[book] = 0;
+          _isLoadingQuestionCount = false;
+          _canStartQuiz = false;
+          _errorMessage = 'Failed to load question count for $book: $e';
+        });
+      }
+    }
+  }
+
+  String _getQuizInfoText(String book) {
+    final questionCount = _bookQuestionCounts[book] ?? 0;
+    final quizLimit = _selectedQuestionCount;
+    
+    if (questionCount == 0) {
+      return 'No questions available for this book.';
+    } else if (questionCount <= quizLimit) {
+      return 'This quiz will use all $questionCount available questions.';
+    } else {
+      return 'This quiz will randomly select $quizLimit questions from $questionCount available questions.';
     }
   }
 
@@ -98,9 +147,9 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       // Generate a simple quiz ID for navigation
       final quizId = '${_selectedBook}_${DateTime.now().millisecondsSinceEpoch}';
       
-      if (mounted) {
-        context.go('/quiz?id=$quizId&difficulty=$_selectedDifficulty');
-      }
+              if (mounted) {
+          context.go('/quiz?id=$quizId&difficulty=$_selectedDifficulty&questions=$_selectedQuestionCount');
+        }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -200,7 +249,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                if (_isLoadingBooks)
+                if (_isLoadingQuestionCount)
                   const Center(child: CircularProgressIndicator())
                 else if (_errorMessage != null)
                   Container(
@@ -229,20 +278,137 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                         hintText: 'Choose a book...',
                       ),
                       items: _availableBooks.map((book) {
+                        final questionCount = _bookQuestionCounts[book] ?? 0;
+                        final questionText = questionCount == 1 ? 'question' : 'questions';
                         return DropdownMenuItem(
                           value: book,
-                          child: Text(book),
+                          child: Text('$book ($questionCount $questionText)'),
                         );
                       }).toList(),
                       onChanged: (value) {
                         setState(() {
                           _selectedBook = value;
+                          _canStartQuiz = false; // Reset until we load question count
                         });
+                        if (value != null) {
+                          _loadQuestionCountForBook(value);
+                        }
                       },
                     ),
                   ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                
+                // Question Count Info
+                if (_selectedBook != null && _bookQuestionCounts[_selectedBook] != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: theme.colorScheme.secondary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Quiz Information',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.secondary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _getQuizInfoText(_selectedBook!),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                
+                const SizedBox(height: 32),
+                
+                // Question Count Selection
+                Text(
+                  'Number of Questions',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.colorScheme.outline),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Select how many questions you want in your quiz:',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [5, 10, 15, 20].map((count) {
+                          final isSelected = _selectedQuestionCount == count;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedQuestionCount = count;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isSelected ? theme.colorScheme.secondary : theme.colorScheme.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSelected ? theme.colorScheme.secondary : theme.colorScheme.outline,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Text(
+                                '$count',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
                 
                 // Difficulty Selection
                 Text(
@@ -288,15 +454,16 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                         Text('Debug Info:', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                         Text('Selected Book: ${_selectedBook ?? "None"}'),
                         Text('Available Books: ${_availableBooks.length}'),
-                        Text('Is Loading: $_isLoading'),
-                        Text('Start Button Enabled: ${_selectedBook != null && !_isLoading}'),
+                        Text('Question Count: ${_bookQuestionCounts[_selectedBook] ?? 0}'),
+                        Text('Is Loading Question Count: $_isLoadingQuestionCount'),
+                        Text('Start Button Enabled: $_canStartQuiz'),
                       ],
                     ),
                   ),
                 ],
                 
                 FilledButton(
-                  onPressed: _isLoading || _selectedBook == null ? null : _startQuiz,
+                  onPressed: _isLoading || _selectedBook == null || !_canStartQuiz ? null : _startQuiz,
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     backgroundColor: theme.colorScheme.secondary,
@@ -305,7 +472,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: _isLoading
+                  child: _isLoading || _isLoadingQuestionCount
                       ? const SizedBox(
                           height: 20,
                           width: 20,

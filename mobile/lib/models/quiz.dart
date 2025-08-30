@@ -1,26 +1,82 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+
 class Question {
   final String id;
   final String book;
   final String question;
   final List<String> options;
-  final String correctOption;
+  final int correctOptionIndex; // Changed from String to int to match database
 
   Question({
     required this.id,
     required this.book,
     required this.question,
     required this.options,
-    required this.correctOption,
+    required this.correctOptionIndex,
   });
 
   factory Question.fromJson(Map<String, dynamic> json) {
-    return Question(
-      id: json['id'] ?? '',
-      book: json['book'] ?? '',
-      question: json['question'] ?? '',
-      options: List<String>.from(json['options'] ?? []),
-      correctOption: json['correct_option'] ?? '',
-    );
+    try {
+      // Debug logging
+      if (kDebugMode) {
+        print('🔍 Parsing question: ${json['question']}');
+        print('🔍 Options type: ${json['options'].runtimeType}');
+        print('🔍 Options value: ${json['options']}');
+        print('🔍 Correct option type: ${json['correct_option'].runtimeType}');
+        print('🔍 Correct option value: ${json['correct_option']}');
+      }
+
+      // Handle options field - ensure it's a List<String>
+      List<String> optionsList;
+      if (json['options'] is List) {
+        optionsList = List<String>.from(json['options'] ?? []);
+      } else if (json['options'] is String) {
+        // If options is a string, try to parse it as JSON
+        try {
+          final parsed = jsonDecode(json['options'] as String);
+          if (parsed is List) {
+            optionsList = List<String>.from(parsed);
+          } else {
+            optionsList = [];
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ Failed to parse options string: $e');
+          }
+          optionsList = [];
+        }
+      } else {
+        if (kDebugMode) {
+          print('⚠️ Unexpected options type: ${json['options'].runtimeType}');
+        }
+        optionsList = [];
+      }
+
+      // Handle correct_option field - ensure it's an integer
+      int correctOptionIndex;
+      if (json['correct_option'] is int) {
+        correctOptionIndex = json['correct_option'] as int;
+      } else if (json['correct_option'] is String) {
+        correctOptionIndex = int.tryParse(json['correct_option'] as String) ?? 0;
+      } else {
+        correctOptionIndex = 0;
+      }
+
+      return Question(
+        id: json['id']?.toString() ?? '',
+        book: json['book']?.toString() ?? '',
+        question: json['question']?.toString() ?? '',
+        options: optionsList,
+        correctOptionIndex: correctOptionIndex,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error parsing question: $e');
+        print('❌ JSON data: $json');
+      }
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -29,9 +85,14 @@ class Question {
       'book': book,
       'question': question,
       'options': options,
-      'correct_option': correctOption,
+      'correct_option': correctOptionIndex,
     };
   }
+
+  // Helper method to get the correct answer text
+  String get correctOption => options.isNotEmpty && correctOptionIndex < options.length 
+      ? options[correctOptionIndex] 
+      : '';
 }
 
 class QuizResult {
