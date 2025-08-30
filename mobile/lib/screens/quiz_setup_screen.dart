@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:testify/services/quiz_service.dart';
 import 'package:testify/widgets/elephant_mascot.dart';
+import 'package:testify/widgets/liquid_glass_container.dart';
+import 'package:testify/widgets/liquid_background.dart';
+import 'package:testify/theme.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:ui';
 
 class QuizSetupScreen extends StatefulWidget {
   const QuizSetupScreen({super.key});
@@ -14,23 +18,19 @@ class QuizSetupScreen extends StatefulWidget {
 class _QuizSetupScreenState extends State<QuizSetupScreen> {
   String? _selectedBook;
   String _selectedDifficulty = 'medium';
-  int _selectedQuestionCount = 10; // Default to 10 questions
-  bool _isLoading = false; // Changed to false since we don't load books on startup
-  bool _isLoadingQuestionCount = false; // New loading state for question count
+  int _selectedQuestionCount = 10;
+  bool _isLoading = false;
+  bool _isLoadingQuestionCount = false;
   List<String> _availableBooks = [];
   String? _errorMessage;
-  Map<String, int> _bookQuestionCounts = {}; // Track question counts per book
-  bool _canStartQuiz = false; // Track if quiz can be started
+  final Map<String, int> _bookQuestionCounts = {};
+  bool _canStartQuiz = false;
 
   @override
   void initState() {
     super.initState();
     _loadAvailableBooks();
-    // Temporarily disabled to fix loading issue
-    // _testDatabaseConnection();
   }
-
-
 
   Future<void> _loadAvailableBooks() async {
     try {
@@ -54,7 +54,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           _availableBooks = books;
         });
         
-        // Auto-select first book if available
         if (books.isNotEmpty && _selectedBook == null) {
           setState(() {
             _selectedBook = books.first;
@@ -62,7 +61,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           if (kDebugMode) {
             print('✓ Auto-selected first book: ${books.first}');
           }
-          // Load question count for the selected book
           _loadQuestionCountForBook(books.first);
         }
       }
@@ -91,7 +89,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
         setState(() {
           _bookQuestionCounts[book] = questionCount;
           _isLoadingQuestionCount = false;
-          _canStartQuiz = questionCount > 0; // Enable start button if questions exist
+          _canStartQuiz = questionCount > 0;
         });
         
         if (kDebugMode) {
@@ -114,25 +112,20 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     }
   }
 
-  String _getQuizInfoText(String book) {
-    final questionCount = _bookQuestionCounts[book] ?? 0;
-    final quizLimit = _selectedQuestionCount;
-    
-    if (questionCount == 0) {
-      return 'No questions available for this book.';
-    } else if (questionCount <= quizLimit) {
-      return 'This quiz will use all $questionCount available questions.';
-    } else {
-      return 'This quiz will randomly select $quizLimit questions from $questionCount available questions.';
-    }
+  String _getNoQuestionsMessage(String book) {
+    return 'Questions for $book are still in development. Please try again later or select a different book.';
   }
 
   Future<void> _startQuiz() async {
     if (_selectedBook == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a book'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('Please select a book'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+          ),
         ),
       );
       return;
@@ -144,12 +137,11 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     });
 
     try {
-      // Generate a simple quiz ID for navigation
       final quizId = '${_selectedBook}_${DateTime.now().millisecondsSinceEpoch}';
       
-              if (mounted) {
-          context.go('/quiz?id=$quizId&difficulty=$_selectedDifficulty&questions=$_selectedQuestionCount');
-        }
+      if (mounted) {
+        context.go('/quiz?id=$quizId&difficulty=$_selectedDifficulty&questions=$_selectedQuestionCount');
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -159,7 +151,11 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error starting quiz: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+            ),
           ),
         );
       }
@@ -177,59 +173,60 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Quiz Setup'),
         centerTitle: true,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.primaryContainer,
-              theme.colorScheme.surface,
-            ],
+        backgroundColor: Colors.transparent,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withValues(alpha: 0.8),
+                border: Border(
+                  bottom: BorderSide(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
+      ),
+      body: GradientLiquidBackground(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(DesignTokens.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: DesignTokens.xl),
+                
+                // Header Card
+                LiquidGlassCard(
+                  margin: const EdgeInsets.only(bottom: DesignTokens.xl),
                   child: Column(
                     children: [
-                      const ElephantMascot(size: 60),
-                      const SizedBox(height: 16),
+                      const ElephantMascot(size: 80),
+                      const SizedBox(height: DesignTokens.lg),
                       Text(
                         'Quiz Setup',
                         style: theme.textTheme.headlineMedium?.copyWith(
-                          color: theme.colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: DesignTokens.sm),
                       Text(
                         'Choose your quiz settings and get ready to test your knowledge!',
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -237,58 +234,54 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 32),
-                
-                // Book Selection
-                Text(
-                  'Select Bible Book',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 16),
+                // Book Selection Section
+                _buildSectionHeader('Select Bible Book', Icons.book),
+                const SizedBox(height: DesignTokens.md),
                 
                 if (_isLoadingQuestionCount)
-                  const Center(child: CircularProgressIndicator())
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  )
                 else if (_errorMessage != null)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                      textAlign: TextAlign.center,
+                  LiquidGlassContainer(
+                    padding: const EdgeInsets.all(DesignTokens.md),
+                    backgroundColor: theme.colorScheme.errorContainer.withValues(alpha: 0.1),
+                    borderColor: theme.colorScheme.error.withValues(alpha: 0.3),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: theme.colorScheme.error,
+                          size: 20,
+                        ),
+                        const SizedBox(width: DesignTokens.sm),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(color: theme.colorScheme.error),
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 else
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: theme.colorScheme.outline),
-                    ),
+                  LiquidGlassInput(
                     child: DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         hintText: 'Choose a book...',
+                        icon: Icon(Icons.arrow_drop_down),
                       ),
                       items: _availableBooks.map((book) {
-                        final questionCount = _bookQuestionCounts[book] ?? 0;
-                        final questionText = questionCount == 1 ? 'question' : 'questions';
                         return DropdownMenuItem(
                           value: book,
-                          child: Text('$book ($questionCount $questionText)'),
+                          child: Text(book),
                         );
                       }).toList(),
                       onChanged: (value) {
                         setState(() {
                           _selectedBook = value;
-                          _canStartQuiz = false; // Reset until we load question count
+                          _canStartQuiz = false;
                         });
                         if (value != null) {
                           _loadQuestionCountForBook(value);
@@ -297,84 +290,56 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                     ),
                   ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: DesignTokens.md),
                 
-                // Question Count Info
-                if (_selectedBook != null && _bookQuestionCounts[_selectedBook] != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.3)),
-                    ),
+                // Message for books with no questions
+                if (_selectedBook != null && _bookQuestionCounts[_selectedBook] == 0) ...[
+                  LiquidGlassContainer(
+                    padding: const EdgeInsets.all(DesignTokens.md),
+                    backgroundColor: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.1),
+                    borderColor: theme.colorScheme.tertiary.withValues(alpha: 0.3),
                     child: Row(
                       children: [
                         Icon(
-                          Icons.info_outline,
-                          color: theme.colorScheme.secondary,
+                          Icons.hourglass_empty,
+                          color: theme.colorScheme.tertiary,
                           size: 20,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: DesignTokens.sm),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Quiz Information',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.secondary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _getQuizInfoText(_selectedBook!),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            _getNoQuestionsMessage(_selectedBook!),
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: DesignTokens.md),
                 ],
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: DesignTokens.xl),
                 
-                // Question Count Selection
-                Text(
-                  'Number of Questions',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 16),
+                // Question Count Section
+                _buildSectionHeader('Number of Questions', Icons.quiz),
+                const SizedBox(height: DesignTokens.md),
                 
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.colorScheme.outline),
-                  ),
+                LiquidGlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Select how many questions you want in your quiz:',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: DesignTokens.lg),
                       Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                        spacing: DesignTokens.sm,
+                        runSpacing: DesignTokens.sm,
                         children: [5, 10, 15, 20].map((count) {
                           final isSelected = _selectedQuestionCount == count;
                           return GestureDetector(
@@ -383,21 +348,26 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                                 _selectedQuestionCount = count;
                               });
                             },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: isSelected ? theme.colorScheme.secondary : theme.colorScheme.surface,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isSelected ? theme.colorScheme.secondary : theme.colorScheme.outline,
-                                  width: 2,
-                                ),
+                            child: LiquidGlassContainer(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: DesignTokens.lg,
+                                vertical: DesignTokens.md,
                               ),
+                              backgroundColor: isSelected 
+                                  ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                                  : theme.colorScheme.surface.withValues(alpha: 0.1),
+                              borderColor: isSelected 
+                                  ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                                  : theme.colorScheme.outline.withValues(alpha: 0.3),
+                              borderRadius: DesignTokens.radiusMd,
+                              enableAnimation: true,
                               child: Text(
                                 '$count',
                                 style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected 
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -408,50 +378,47 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: DesignTokens.xl),
                 
-                // Difficulty Selection
-                Text(
-                  'Select Difficulty',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 16),
+                // Difficulty Section
+                _buildSectionHeader('Select Difficulty', Icons.trending_up),
+                const SizedBox(height: DesignTokens.md),
                 
                 Row(
                   children: [
                     Expanded(
                       child: _buildDifficultyChip('easy', 'Easy', Icons.sentiment_satisfied),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: DesignTokens.sm),
                     Expanded(
                       child: _buildDifficultyChip('medium', 'Medium', Icons.sentiment_neutral),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: DesignTokens.sm),
                     Expanded(
                       child: _buildDifficultyChip('hard', 'Hard', Icons.sentiment_dissatisfied),
                     ),
                   ],
                 ),
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: DesignTokens.xl),
                 
-                // Start Quiz Button
+                // Debug Info (only in debug mode)
                 if (kDebugMode) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.1),
-                      border: Border.all(color: Colors.orange),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  LiquidGlassContainer(
+                    padding: const EdgeInsets.all(DesignTokens.md),
+                    backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                    borderColor: Colors.orange.withValues(alpha: 0.3),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Debug Info:', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                        Text(
+                          'Debug Info:',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: DesignTokens.xs),
                         Text('Selected Book: ${_selectedBook ?? "None"}'),
                         Text('Available Books: ${_availableBooks.length}'),
                         Text('Question Count: ${_bookQuestionCounts[_selectedBook] ?? 0}'),
@@ -460,18 +427,15 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: DesignTokens.lg),
                 ],
                 
-                FilledButton(
-                  onPressed: _isLoading || _selectedBook == null || !_canStartQuiz ? null : _startQuiz,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    backgroundColor: theme.colorScheme.secondary,
-                    foregroundColor: theme.colorScheme.onSecondary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                // Start Quiz Button
+                LiquidGlassButton(
+                  onPressed: _isLoading || _selectedBook == null || !_canStartQuiz 
+                      ? null 
+                      : _startQuiz,
+                  width: double.infinity,
                   child: _isLoading || _isLoadingQuestionCount
                       ? const SizedBox(
                           height: 20,
@@ -484,29 +448,86 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                       : Text(
                           'Start Quiz',
                           style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
                         ),
                 ),
                 
-                const SizedBox(height: 16),
-                
-                // Back Button
-                OutlinedButton(
-                  onPressed: () => context.go('/dashboard'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                // Debug info for start button
+                if (kDebugMode) ...[
+                  const SizedBox(height: DesignTokens.md),
+                  LiquidGlassContainer(
+                    padding: const EdgeInsets.all(DesignTokens.md),
+                    backgroundColor: Colors.red.withValues(alpha: 0.1),
+                    borderColor: Colors.red.withValues(alpha: 0.3),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Start Button Debug:',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text('Selected Book: ${_selectedBook ?? "None"}'),
+                        Text('Can Start Quiz: $_canStartQuiz'),
+                        Text('Is Loading: $_isLoading'),
+                        Text('Is Loading Question Count: $_isLoadingQuestionCount'),
+                        Text('Button Enabled: ${!_isLoading && _selectedBook != null && _canStartQuiz}'),
+                      ],
                     ),
                   ),
-                  child: const Text('Back to Dashboard'),
+                ],
+                
+                const SizedBox(height: DesignTokens.md),
+                
+                // Back Button
+                LiquidGlassContainer(
+                  onTap: () => context.go('/dashboard'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: DesignTokens.lg,
+                    vertical: DesignTokens.md,
+                  ),
+                          backgroundColor: Colors.transparent,
+        borderColor: theme.colorScheme.outline.withValues(alpha: 0.3),
+                  child: Text(
+                    'Back to Dashboard',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    final theme = Theme.of(context);
+    
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: theme.colorScheme.primary,
+          size: 24,
+        ),
+        const SizedBox(width: DesignTokens.sm),
+        Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+      ],
     );
   }
 
@@ -520,29 +541,36 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           _selectedDifficulty = difficulty;
         });
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? theme.colorScheme.secondary : theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? theme.colorScheme.secondary : theme.colorScheme.outline,
-            width: 2,
-          ),
+      child: LiquidGlassContainer(
+        padding: const EdgeInsets.symmetric(
+          vertical: DesignTokens.md,
+          horizontal: DesignTokens.sm,
         ),
+        backgroundColor: isSelected 
+            ? theme.colorScheme.secondary.withValues(alpha: 0.2)
+            : theme.colorScheme.surface.withValues(alpha: 0.1),
+        borderColor: isSelected 
+            ? theme.colorScheme.secondary.withValues(alpha: 0.5)
+            : theme.colorScheme.outline.withValues(alpha: 0.3),
+        borderRadius: DesignTokens.radiusMd,
+        enableAnimation: true,
         child: Column(
           children: [
             Icon(
               icon,
-              color: isSelected ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
+              color: isSelected 
+                  ? theme.colorScheme.secondary
+                  : theme.colorScheme.onSurfaceVariant,
               size: 24,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DesignTokens.sm),
             Text(
               label,
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+                color: isSelected 
+                    ? theme.colorScheme.secondary
+                    : theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],

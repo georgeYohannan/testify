@@ -226,12 +226,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {
-                          // Navigate to quiz history or profile
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Profile feature coming soon!')),
-                          );
-                        },
+                        onPressed: () => context.go('/profile'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           shape: RoundedRectangleBorder(

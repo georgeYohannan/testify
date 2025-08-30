@@ -5,6 +5,7 @@ import 'package:testify/screens/dashboard_screen.dart';
 import 'package:testify/screens/quiz_setup_screen.dart';
 import 'package:testify/screens/quiz_screen.dart';
 import 'package:testify/screens/results_screen.dart';
+import 'package:testify/screens/profile_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -59,6 +60,11 @@ final GoRouter appRouter = GoRouter(
           timeInSeconds: time,
         );
       },
+    ),
+    GoRoute(
+      path: '/profile',
+      name: 'profile',
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );
